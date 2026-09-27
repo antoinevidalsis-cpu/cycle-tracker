@@ -1,0 +1,10 @@
+{
+  "name": "Cycle Tracker",
+  "short_name": "Cycle Tracker",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#0d0f12",
+  "theme_color": "#0d0f12",
+  "lang": "fr-FR",
+  "description": "Suivi du cycle musculation — densité et athlétisation"
+}

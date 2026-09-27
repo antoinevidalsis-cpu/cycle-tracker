@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Cycle Tracker</title>
+<style>
+:root{--bg:#0d0f12;--card:#171a1f;--card2:#20242b;--text:#f2f4f7;--muted:#9da5b1;--line:#303641;--accent:#d8ff45;--danger:#ff6678}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+button,input,select{font:inherit}button{cursor:pointer}
+.app{max-width:760px;margin:auto;padding:18px 14px 100px}
+header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
+h1{font-size:24px;margin:0}.sub{color:var(--muted);font-size:13px;margin-top:4px}
+.nav{display:flex;gap:6px;background:var(--card);padding:5px;border-radius:14px;margin-bottom:16px}
+.nav button{flex:1;border:0;background:transparent;color:var(--muted);padding:10px 6px;border-radius:10px}
+.nav button.active{background:var(--card2);color:var(--text)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:15px;margin-bottom:12px}
+.row{display:flex;align-items:center;justify-content:space-between;gap:10px}.tag{font-size:11px;color:#111;background:var(--accent);padding:5px 8px;border-radius:8px;font-weight:800}
+h2{font-size:18px;margin:4px 0 3px}.muted{color:var(--muted)}
+.week{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin:10px 0 15px}
+.week button{border:1px solid var(--line);background:var(--card);color:var(--muted);border-radius:10px;padding:9px 2px;font-size:12px}
+.week button.active{border-color:var(--accent);color:var(--text);background:#1c2115}
+.sessionTabs{display:flex;gap:8px;margin-bottom:12px}.sessionTabs button{flex:1;padding:12px;border:1px solid var(--line);background:var(--card);color:var(--muted);border-radius:12px;font-weight:700}.sessionTabs button.active{background:var(--accent);color:#111;border-color:var(--accent)}
+.exercise{padding:14px 0;border-top:1px solid var(--line)}.exercise:first-child{border-top:0}
+.exercise h3{margin:0;font-size:16px}.prescription{font-size:12px;color:var(--muted);margin:5px 0 10px}
+.sets{display:grid;grid-template-columns:34px 1fr 1fr 1fr 38px;gap:6px;align-items:center}
+.sets div.head{font-size:10px;color:var(--muted);text-align:center}.sets input{width:100%;background:var(--bg);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:9px 5px;text-align:center}
+.check{width:38px;height:38px;border-radius:9px;border:1px solid var(--line);background:var(--bg);color:var(--muted)}.check.done{background:var(--accent);color:#111;border-color:var(--accent)}
+.notes{width:100%;margin-top:9px;background:var(--bg);border:1px solid var(--line);color:var(--text);border-radius:9px;padding:9px}
+.primary{width:100%;border:0;background:var(--accent);color:#111;font-weight:800;padding:13px;border-radius:12px;margin-top:10px}
+.secondary{border:1px solid var(--line);background:var(--card2);color:var(--text);padding:10px 12px;border-radius:10px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.stat{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:13px}.stat b{display:block;font-size:21px}.stat span{font-size:11px;color:var(--muted)}
+.bar{height:8px;background:var(--bg);border-radius:20px;overflow:hidden;margin-top:8px}.fill{height:100%;background:var(--accent)}
+.historyItem{padding:12px 0;border-top:1px solid var(--line);font-size:13px}
+.empty{padding:35px 10px;text-align:center;color:var(--muted)}
+.small{font-size:12px}.danger{color:var(--danger)}
+@media(max-width:520px){.sets{grid-template-columns:25px 1fr 1fr 1fr 38px}.app{padding-top:12px}}
+</style>
+<link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#0d0f12"></head>
+<body>
+<div class="app">
+<header><div><h1>Cycle Tracker</h1><div class="sub">Densité · Athlétisation · Progression</div></div><button class="secondary" onclick="resetAll()">↺</button></header>
+<div class="nav">
+<button id="navWorkout" class="active" onclick="showPage('workout')">Séance</button>
+<button id="navStats" onclick="showPage('stats')">Stats</button>
+<button id="navHistory" onclick="showPage('history')">Historique</button>
+</div>
+<main id="workoutPage">
+<div class="week" id="week"></div>
+<div class="sessionTabs" id="sessionTabs"></div>
+<div id="workout"></div>
+</main>
+<main id="statsPage" style="display:none"></main>
+<main id="historyPage" style="display:none"></main>
+</div>
+<script>
+const PROGRAM={
+A:{title:"Force athlétique — bas du corps", exercises:[
+["Box jump / saut vertical","4 × 4 · explosif","Explosivité",4],
+["Med-ball slam","4 × 6 · explosif","Puissance",4],
+["Bulgarian split squat","4 × 8 / jambe · RIR 2","Unilatéral",4],
+["Single-leg calf raise","4 × 10–12 / jambe","Mollets",4],
+["Romanian deadlift","4 × 8 · RIR 2","Chaîne postérieure",4],
+["Hip extension GHD","3 × 10–12","Chaîne postérieure",3],
+["Ab wheel","3 × 8–12 · RIR 2","Core",3],
+["Suitcase carry","3 × 30–40 m / côté","Anti-inclinaison",3]
+],finisher:"EMOM 6′ · impaire 8 KB swings / paire 6 burpees"},
+B:{title:"Densité — haut du corps", exercises:[
+["Tractions lestées","4 × 5–8 · RIR 1–2","Tirage vertical",4],
+["Med-ball chest pass","4 × 5 · explosif","Puissance",4],
+["Rowing haltère unilatéral","4 × 8–10 / côté","Dos",4],
+["Face pull","4 × 12–15","Épaules / posture",4],
+["Développé haltères prise neutre","3 × 10–15 · RIR 2–3","Push protégé",3],
+["Cuban press","3 × 12–15 · très léger","Coiffe / contrôle",3],
+["Curl marteau","3 × 8–12","Bras",3],
+["Farmer carry","3 × 30–40 m","Grip / gainage",3],
+["Pallof press","3 × 10–12 / côté","Core",3],
+["Dead bug chargé","3 × 8 / côté","Core",3]
+],finisher:"3 tours · 10 row élastique explosif / 10 curls / 20 m bear crawl / 30″ repos"},
+C:{title:"Full body — pompier / densité", exercises:[
+["Broad jump","4 × 3 · explosif","Puissance",4],
+["Lateral bound","4 × 4 / côté","Athlétisation",4],
+["Trap-bar deadlift","4 × 6 · RIR 2","Force",4],
+["Tractions pronation","4 × 6–8","Tirage",4],
+["Step-up haut chargé","3 × 8 / jambe","Unilatéral",3],
+["Walking lunge","3 × 10 / jambe","Jambes",3],
+["Pompes sur poignées / haltères","3 × 10–15 · RIR 2–3","Push protégé",3],
+["Rowing poitrine appuyée","3 × 10–12","Dos",3],
+["Ab wheel","3 × 10–12","Core",3],
+["Suitcase + farmer carry","3 × 30 m / côté","Carry",3]
+],finisher:"Aucun : qualité + récupération"}
+};
+let state=JSON.parse(localStorage.getItem("cycleTracker")||"null")||{week:1,session:"A",logs:{},started:new Date().toISOString()};
+function save(){localStorage.setItem("cycleTracker",JSON.stringify(state));}
+function key(w,s,i,j){return `${w}-${s}-${i}-${j}`}
+function showPage(p){["workout","stats","history"].forEach(x=>document.getElementById(x+"Page").style.display=x===p?"block":"none");["navWorkout","navStats","navHistory"].forEach(x=>document.getElementById(x).classList.remove("active"));document.getElementById("nav"+p[0].toUpperCase()+p.slice(1)).classList.add("active");if(p==="stats")renderStats();if(p==="history")renderHistory();}
+function render(){renderWeeks();renderSessions();renderWorkout();}
+function renderWeeks(){document.getElementById("week").innerHTML=[1,2,3,4].map(w=>`<button class="${state.week===w?"active":""}" onclick="state.week=${w};save();render()">S${w}</button>`).join("")}
+function renderSessions(){document.getElementById("sessionTabs").innerHTML=["A","B","C"].map(s=>`<button class="${state.session===s?"active":""}" onclick="state.session='${s}';save();render()">${s}</button>`).join("")}
+function getLog(i,j){return state.logs[key(state.week,state.session,i,j)]||{reps:"",weight:"",rir:"",done:false}}
+function update(i,j,f,v){let k=key(state.week,state.session,i,j);state.logs[k]={...(state.logs[k]||{}),[f]:v};save();}
+function renderWorkout(){
+let p=PROGRAM[state.session];
+let done=0,total=0;
+let body=`<div class="card"><div class="row"><div><span class="tag">SEMAINE ${state.week}</span><h2>${p.title}</h2><div class="muted small">Réalise les séries avec la qualité prévue. Le tracker conserve tes données.</div></div></div><div class="bar"><div class="fill" id="progressFill" style="width:0%"></div></div></div>`;
+p.exercises.forEach((e,i)=>{body+=`<div class="card exercise"><div class="row"><div><h3>${e[0]}</h3><div class="prescription">${e[1]}</div></div><span class="tag">${e[2]}</span></div><div class="sets"><div class="head">#</div><div class="head">REPS</div><div class="head">KG</div><div class="head">RIR</div><div></div>`;
+for(let j=0;j<e[3];j++){let l=getLog(i,j);total++;if(l.done)done++;body+=`<div class="head">${j+1}</div><input inputmode="decimal" value="${l.reps}" onchange="update(${i},${j},'reps',this.value)" placeholder="—"><input inputmode="decimal" value="${l.weight}" onchange="update(${i},${j},'weight',this.value)" placeholder="—"><input inputmode="decimal" value="${l.rir}" onchange="update(${i},${j},'rir',this.value)" placeholder="—"><button class="check ${l.done?"done":""}" onclick="toggle(${i},${j})">${l.done?"✓":"○"}</button>`}
+body+=`</div><input class="notes" value="${(state.logs[key(state.week,state.session,i,0)]||{}).note||""}" onchange="update(${i},0,'note',this.value)" placeholder="Note (douleur, technique, sensation…)"></div>`});
+body+=`<div class="card"><div class="row"><div><b>Finisher</b><div class="muted small">${p.finisher}</div></div></div><button class="primary" onclick="finishSession()">✓ Valider la séance</button></div>`;
+document.getElementById("workout").innerHTML=body;document.getElementById("progressFill").style.width=(total?done/total*100:0)+"%";
+}
+function toggle(i,j){let k=key(state.week,state.session,i,j);state.logs[k]={...(state.logs[k]||{}),done:!((state.logs[k]||{}).done)};save();renderWorkout();}
+function finishSession(){let d=new Date().toLocaleString("fr-FR");state.lastCompleted={week:state.week,session:state.session,date:d};save();alert(`Séance ${state.session} — semaine ${state.week} enregistrée.`);}
+function renderStats(){
+let entries=Object.entries(state.logs).filter(([k,v])=>v.weight||v.reps);
+let sessions=new Set(entries.map(([k])=>k.split("-").slice(0,2).join("-"))).size;
+let completed=entries.filter(([k,v])=>v.done).length;
+document.getElementById("statsPage").innerHTML=`<div class="stats"><div class="stat"><b>${sessions}</b><span>séances touchées</span></div><div class="stat"><b>${completed}</b><span>séries validées</span></div><div class="stat"><b>S${state.week}</b><span>semaine active</span></div></div><div class="card" style="margin-top:12px"><h2>Progression</h2><div class="muted small">Les charges et répétitions saisies restent enregistrées dans ce navigateur. Utilise l'historique pour comparer les semaines.</div></div>`;
+}
+function renderHistory(){
+let groups={};Object.entries(state.logs).forEach(([k,v])=>{if(!v.reps&&!v.weight&&!v.done)return;let [w,s,i,j]=k.split("-");let g=`S${w} · ${s}`;(groups[g]??=[]).push({i:+i,j:+j,v});});
+let html=`<div class="card"><h2>Historique</h2><div class="muted small">Données locales — elles ne quittent pas ton navigateur.</div></div>`;
+Object.entries(groups).reverse().forEach(([g,arr])=>{html+=`<div class="card"><b>${g}</b>`;arr.forEach(x=>{let ex=PROGRAM[x.v?g.split(" · ")[1]:"A"].exercises[x.i];html+=`<div class="historyItem"><b>${ex?.[0]||"Exercice"}</b> · série ${x.j+1}<br><span class="muted">${x.v.reps||"—"} reps · ${x.v.weight||"—"} kg · RIR ${x.v.rir||"—"} ${x.v.done?"· ✓":""}</span></div>`});html+=`</div>`});
+document.getElementById("historyPage").innerHTML=html||`<div class="empty">Pas encore de données.<br>Commence ta première séance.</div>`;
+}
+function resetAll(){if(confirm("Effacer toutes les données du cycle ?")){localStorage.removeItem("cycleTracker");location.reload()}}
+render();
+</script>
+<script>if("serviceWorker" in navigator){navigator.serviceWorker.register("./service-worker.js").catch(()=>{});}</script></body>
+</html>
